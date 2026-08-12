@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Карта активності Telegram</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap');
+
+  :root{
+    --bg-top:#EAF0F7;
+    --bg-bottom:#DEE7F1;
+    --surface:#FFFFFF;
+    --surface-soft:#F3F6FA;
+    --border:#D7DFEA;
+    --ink:#0F1A26;
+    --ink-soft:#51606F;
+    --ink-faint:#8695A6;
+    --accent:#2AABEE;
+    --accent-deep:#14588A;
+    --accent-soft:#BFE0FB;
+    --heat-0:#E3E8EF;
+    --radius:16px;
+    --font-display:'Space Grotesk','Segoe UI',system-ui,sans-serif;
+    --font-body:'Inter',system-ui,-apple-system,sans-serif;
+    --font-mono:'JetBrains Mono',ui-monospace,SFMono-Regular,monospace;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom)) fixed;
+    color:var(--ink);
+    font-family:var(--font-body);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .page{
+    max-width:1080px;
+    margin:0 auto;
+    padding:56px 24px 80px;
+  }
+
+  .hero{
+    text-align:left;
+    margin-bottom:40px;
+  }
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:12px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--accent-deep);
+    background:var(--accent-soft);
+    display:inline-block;
+    padding:5px 12px;
+    border-radius:999px;
+    margin:0 0 18px;
+  }
+  .hero h1{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:clamp(34px,5vw,52px);
+    line-height:1.05;
+    margin:0 0 14px;
+    background:linear-gradient(100deg,var(--ink) 40%,var(--accent-deep));
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+  .lede{
+    font-size:16px;
+    line-height:1.55;
+    color:var(--ink-soft);
+    max-width:620px;
+    margin:0;
+  }
+
+  .uploader{
+    position:relative;
+    background:var(--surface);
+    border:2px dashed var(--border);
+    border-radius:var(--radius);
+    padding:36px 24px;
+    text-align:center;
+    transition:border-color .2s ease, background .2s ease;
+  }
+  .uploader.dragover{
+    border-color:var(--accent);
+    background:var(--surface-soft);
+  }
+  .uploader.done{
+    border-style:solid;
+    border-color:var(--accent-soft);
+  }
+  .bubble-icon{
+    width:48px;height:48px;
+    margin:0 auto 14px;
+    border-radius:14px 14px 14px 4px;
+    background:linear-gradient(135deg,var(--accent),var(--accent-deep));
+    display:flex;align-items:center;justify-content:center;
+    font-size:22px;
+  }
+  .dz-title{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:17px;
+    margin:0 0 6px;
+  }
+  .dz-sub{
+    font-size:14px;
+    color:var(--ink-faint);
+    margin:0;
+  }
+  .link-btn{
+    background:none;border:none;padding:0;
+    color:var(--accent-deep);
+    font-weight:600;
+    cursor:pointer;
+    text-decoration:underline;
+    font-size:14px;
+    font-family:var(--font-body);
+  }
+
+  .typing-indicator{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    padding:14px 0;
+  }
+  .typing-indicator span{
+    width:9px;height:9px;
+    border-radius:50%;
+    background:var(--accent);
+    animation:typing-bounce 1s infinite ease-in-out;
+  }
+  .typing-indicator span:nth-child(2){animation-delay:.15s;}
+  .typing-indicator span:nth-child(3){animation-delay:.3s;}
+  .typing-indicator p{
+    width:100%;
+    font-size:13px;
+    color:var(--ink-faint);
+    margin:10px 0 0;
+    font-family:var(--font-mono);
+  }
+  @keyframes typing-bounce{
+    0%,60%,100%{transform:translateY(0);opacity:.5;}
+    30%{transform:translateY(-6px);opacity:1;}
+  }
+
+  .author-panel{
+    margin-top:28px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:22px 22px 18px;
+  }
+  .author-panel label{
+    display:block;
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:15px;
+    margin-bottom:10px;
+  }
+  #authorSearch{
+    width:100%;
+    padding:10px 14px;
+    border:1px solid var(--border);
+    border-radius:10px;
+    font-family:var(--font-body);
+    font-size:14px;
+    margin-bottom:14px;
+    outline:none;
+    background:var(--surface-soft);
+  }
+  #authorSearch:focus{border-color:var(--accent);}
+
+  .author-list{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    max-height:220px;
+    overflow-y:auto;
+    padding-right:4px;
+  }
+  .author-chip{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:8px 12px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background:var(--surface-soft);
+    cursor:pointer;
+    font-family:var(--font-body);
+    font-size:13px;
+    color:var(--ink);
+    transition:background .15s ease, border-color .15s ease, transform .1s ease;
+  }
+  .author-chip:hover{border-color:var(--accent-soft); transform:translateY(-1px);}
+  .author-chip.active{
+    background:var(--accent);
+    border-color:var(--accent-deep);
+    color:#fff;
+  }
+  .author-count{
+    font-family:var(--font-mono);
+    font-size:11px;
+    opacity:.75;
+  }
+  .author-chip.all-chip{
+    border-color:var(--accent-deep);
+    border-style:dashed;
+    font-weight:600;
+  }
+  .author-chip.all-chip.active{
+    background:var(--accent-deep);
+    border-color:var(--accent-deep);
+  }
+  .author-divider{
+    width:100%;
+    border:none;
+    border-top:1px dashed var(--border);
+    margin:2px 0;
+  }
+
+  .results{margin-top:32px;}
+
+  .stats-row{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+    gap:12px;
+    margin-bottom:20px;
+  }
+  .stat-card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:16px 14px;
+    text-align:left;
+  }
+  .stat-value{
+    font-family:var(--font-mono);
+    font-weight:600;
+    font-size:22px;
+    color:var(--accent-deep);
+  }
+  .stat-label{
+    font-size:12px;
+    color:var(--ink-faint);
+    margin-top:4px;
+  }
+
+  .heatmap-card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:22px;
+  }
+  .heatmap-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:10px;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .heatmap-header h2{
+    font-family:var(--font-display);
+    font-size:18px;
+    margin:0;
+  }
+  .ghost-btn{
+    background:var(--surface-soft);
+    border:1px solid var(--border);
+    color:var(--ink);
+    padding:8px 14px;
+    border-radius:9px;
+    font-family:var(--font-body);
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    transition:background .15s ease;
+  }
+  .ghost-btn:hover{background:var(--accent-soft);}
+
+  .heatmap-scroll{
+    overflow-x:auto;
+    padding-bottom:6px;
+  }
+  #heatmapSvg{display:block;}
+  .day-cell{cursor:pointer;}
+  .day-cell:hover{stroke:var(--accent-deep); stroke-width:1.5;}
+
+  .legend{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    margin-top:16px;
+    padding-top:14px;
+    border-top:1px solid var(--border);
+    font-size:12px;
+    color:var(--ink-faint);
+    flex-wrap:wrap;
+  }
+  .legend-group{
+    display:flex;
+    align-items:center;
+    gap:4px;
+  }
+  .legend-swatch{
+    width:13px;height:13px;
+    border-radius:3px;
+    display:inline-block;
+    border:1px solid rgba(15,26,38,.12);
+  }
+  .legend-value{
+    font-family:var(--font-mono);
+    font-size:10px;
+    color:var(--ink-faint);
+    min-width:14px;
+    text-align:center;
+  }
+
+  .tooltip{
+    position:fixed;
+    z-index:50;
+    background:var(--ink);
+    color:#fff;
+    padding:6px 10px;
+    border-radius:8px;
+    font-size:12px;
+    line-height:1.4;
+    pointer-events:none;
+    box-shadow:0 6px 18px rgba(15,26,38,.25);
+  }
+
+  .foot{
+    margin-top:36px;
+    text-align:center;
+  }
+  .foot p{
+    font-size:13px;
+    color:var(--ink-faint);
+    max-width:520px;
+    margin:0 auto;
+    line-height:1.5;
+  }
+
+  [hidden]{display:none !important;}
+
+  @media (max-width:640px){
+    .page{padding:36px 16px 60px;}
+    .hero h1{font-size:30px;}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <p class="eyebrow">Локальна обробка · дані не залишають браузер</p>
+    <h1>Карта активності Telegram</h1>
+    <p class="lede">Завантажте <a href="https://telegram.org/blog/export-and-more" target="_blank">експорт Telegram</a> (оберіть формат <code>JSON</code>) — і за кілька секунд побачите теплову карту своєї активності: рік за роком, день за днем.</p>
+  </header>
+
+  <section class="uploader" id="dropzone">
+    <input type="file" id="fileInput" accept="application/json,.json" hidden>
+    <div class="dropzone-inner" id="dropzoneInner">
+      <div class="bubble-icon">💬</div>
+      <p class="dz-title" id="dzTitle">Перетягніть result.json сюди</p>
+      <p class="dz-sub">або <button type="button" id="browseBtn" class="link-btn">оберіть файл</button></p>
+    </div>
+    <div class="typing-indicator" id="typingIndicator" hidden>
+      <span></span><span></span><span></span>
+      <p id="loadingText">Читаємо файл…</p>
+    </div>
+  </section>
+
+  <section class="author-panel" id="authorPanel" hidden>
+    <label for="authorSearch">Кому належать повідомлення?</label>
+    <input type="text" id="authorSearch" placeholder="Пошук за іменем…" autocomplete="off">
+    <div class="author-list" id="authorList"></div>
+  </section>
+
+  <section class="results" id="results" hidden>
+    <div class="stats-row" id="statsRow"></div>
+    <div class="heatmap-card">
+      <div class="heatmap-header">
+        <h2 id="heatmapTitle">Активність</h2>
+        <button id="downloadBtn" class="ghost-btn">Завантажити PNG</button>
+      </div>
+      <div class="heatmap-scroll">
+        <svg id="heatmapSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+      <div class="legend" id="legend"></div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <p>Увесь розбір JSON і побудова карти відбуваються у вашому браузері за допомогою JavaScript. Файл нікуди не завантажується та не надсилається на жоден сервер.</p>
+  </footer>
+
+</div>
+
+<div class="tooltip" id="tooltip" hidden></div>
+
+<script>
+(function(){
+  const state = { messages: [], authorsCount: {} };
+
+  const fileInput = document.getElementById('fileInput');
+  const browseBtn = document.getElementById('browseBtn');
+  const dropzone = document.getElementById('dropzone');
+  const dropzoneInner = document.getElementById('dropzoneInner');
+  const dzTitle = document.getElementById('dzTitle');
+  const typingIndicator = document.getElementById('typingIndicator');
+  const loadingText = document.getElementById('loadingText');
+  const authorPanel = document.getElementById('authorPanel');
+  const authorSearch = document.getElementById('authorSearch');
+  const authorList = document.getElementById('authorList');
+  const resultsSection = document.getElementById('results');
+  const statsRow = document.getElementById('statsRow');
+  const heatmapSvg = document.getElementById('heatmapSvg');
+  const heatmapTitle = document.getElementById('heatmapTitle');
+  const legend = document.getElementById('legend');
+  const tooltip = document.getElementById('tooltip');
+  const downloadBtn = document.getElementById('downloadBtn');
+
+  const MONTHS_UA = ['Січ','Лют','Бер','Кві','Тра','Чер','Лип','Сер','Вер','Жов','Лис','Гру'];
+  const WEEKDAY_LABELS = ['Пн','','Ср','','Пт','',''];
+  const CELL = 11, GAP = 3, LEFT_PAD = 28, YEAR_HEADER_H = 24, MONTH_LABEL_H = 16;
+  const TOP_PAD_PER_YEAR = YEAR_HEADER_H + MONTH_LABEL_H, YEAR_GAP = 26;
+  const HEAT_STOPS = [[227,232,239],[191,224,251],[143,203,244],[42,171,238],[20,88,138]];
+  const ALL_KEY = '__ALL_PARTICIPANTS__';
+
+  browseBtn.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+
+  ['dragenter','dragover'].forEach(evt =>
+    dropzone.addEventListener(evt, e => { e.preventDefault(); dropzone.classList.add('dragover'); }));
+  ['dragleave','drop'].forEach(evt =>
+    dropzone.addEventListener(evt, e => { e.preventDefault(); dropzone.classList.remove('dragover'); }));
+  dropzone.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) handleFile(f); });
+
+  function nextFrame(){ return new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))); }
+
+  function setLoading(text){
+    dropzoneInner.hidden = true;
+    typingIndicator.hidden = false;
+    loadingText.textContent = text;
+  }
+  function clearLoading(){ typingIndicator.hidden = true; dropzoneInner.hidden = false; }
+
+  async function handleFile(file){
+    setLoading('Читаємо файл…');
+    authorPanel.hidden = true;
+    resultsSection.hidden = true;
+    try{
+      const text = await file.text();
+      await nextFrame();
+      setLoading('Розбираємо JSON…');
+      await nextFrame();
+      const json = JSON.parse(text);
+      const messages = extractMessages(json);
+      if (!messages.length) throw new Error('no-messages');
+      state.messages = messages;
+      buildAuthorList(messages);
+      clearLoading();
+      dropzone.classList.add('done');
+      dzTitle.textContent = `Файл завантажено: ${messages.length.toLocaleString('uk-UA')} повідомлень`;
+      authorPanel.hidden = false;
+      authorPanel.scrollIntoView({ behavior:'smooth', block:'start' });
+    }catch(err){
+      clearLoading();
+      dzTitle.textContent = 'Не вдалося прочитати файл. Перевірте, чи це коректний result.json.';
+      console.error(err);
+    }
+  }
+
+  function extractMessages(json){
+    let out = [];
+    if (json && json.chats && Array.isArray(json.chats.list)){
+      for (const chat of json.chats.list){
+        if (Array.isArray(chat.messages)) out.push(...chat.messages);
+      }
+    } else if (json && Array.isArray(json.messages)){
+      out = json.messages;
+    }
+    return out.filter(m => m && m.type === 'message' && m.from && (m.date || m.date_unixtime));
+  }
+
+  function buildAuthorList(messages){
+    const counts = {};
+    for (const m of messages) counts[m.from] = (counts[m.from] || 0) + 1;
+    state.authorsCount = counts;
+    renderAuthorList('');
+  }
+
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function renderAuthorList(filter){
+    const entries = Object.entries(state.authorsCount)
+      .filter(([name]) => name.toLowerCase().includes(filter.toLowerCase()))
+      .sort((a,b) => b[1]-a[1]);
+    authorList.innerHTML = '';
+
+    const totalCount = state.messages.length;
+    const allBtn = document.createElement('button');
+    allBtn.type = 'button';
+    allBtn.className = 'author-chip all-chip';
+    allBtn.innerHTML = `<span class="author-name">Усі учасники</span><span class="author-count">${totalCount.toLocaleString('uk-UA')}</span>`;
+    allBtn.addEventListener('click', () => selectAuthor(ALL_KEY, allBtn));
+    authorList.appendChild(allBtn);
+
+    if (entries.length){
+      const divider = document.createElement('hr');
+      divider.className = 'author-divider';
+      authorList.appendChild(divider);
+    }
+
+    for (const [name, count] of entries){
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'author-chip';
+      btn.innerHTML = `<span class="author-name">${escapeHtml(name)}</span><span class="author-count">${count.toLocaleString('uk-UA')}</span>`;
+      btn.addEventListener('click', () => selectAuthor(name, btn));
+      authorList.appendChild(btn);
+    }
+  }
+  authorSearch.addEventListener('input', e => renderAuthorList(e.target.value));
+
+  function selectAuthor(name, btnEl){
+    document.querySelectorAll('.author-chip').forEach(b => b.classList.remove('active'));
+    btnEl.classList.add('active');
+    const dayCounts = computeDailyCounts(state.messages, name);
+    renderResults(name, dayCounts);
+  }
+
+  function parseDate(m){
+    let d = m.date ? new Date(m.date) : null;
+    if (!d || isNaN(d)){
+      if (m.date_unixtime) d = new Date(parseInt(m.date_unixtime, 10) * 1000);
+    }
+    return (d && !isNaN(d)) ? d : null;
+  }
+
+  function dayKey(d){
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  function computeDailyCounts(messages, name){
+    const map = {};
+    for (const m of messages){
+      if (name !== ALL_KEY && m.from !== name) continue;
+      const d = parseDate(m);
+      if (!d) continue;
+      const key = dayKey(d);
+      map[key] = (map[key] || 0) + 1;
+    }
+    return map;
+  }
+
+  function computeMode(values){
+    if (!values.length) return '—';
+    const freq = {};
+    let best = values[0], bestCount = 0;
+    for (const v of values){
+      freq[v] = (freq[v] || 0) + 1;
+      if (freq[v] > bestCount){ bestCount = freq[v]; best = v; }
+    }
+    return best;
+  }
+
+  function percentile(values, p){
+    if (!values.length) return 0;
+    const sorted = [...values].sort((a,b) => a-b);
+    const idx = (p/100) * (sorted.length - 1);
+    const lo = Math.floor(idx), hi = Math.ceil(idx);
+    if (lo === hi) return sorted[lo];
+    return sorted[lo] + (sorted[hi]-sorted[lo]) * (idx-lo);
+  }
+
+  function longestStreak(dayCounts){
+    const days = Object.keys(dayCounts).sort();
+    let best = 0, cur = 0, prev = null;
+    for (const key of days){
+      const d = new Date(key + 'T00:00:00');
+      cur = (prev && Math.round((d-prev)/86400000) === 1) ? cur+1 : 1;
+      best = Math.max(best, cur);
+      prev = d;
+    }
+    return best;
+  }
+
+  function addStat(label, value){
+    const el = document.createElement('div');
+    el.className = 'stat-card';
+    el.innerHTML = `<div class="stat-value">${value}</div><div class="stat-label">${label}</div>`;
+    statsRow.appendChild(el);
+  }
+
+  function renderResults(name, dayCounts){
+    resultsSection.hidden = false;
+    heatmapTitle.textContent = name === ALL_KEY ? 'Активність: усі учасники' : `Активність: ${name}`;
+
+    const values = Object.values(dayCounts);
+    const total = values.reduce((a,b) => a+b, 0);
+    const activeDays = values.length;
+    const mean = activeDays ? total/activeDays : 0;
+    const mode = computeMode(values);
+    const maxVal = values.length ? Math.max(...values) : 0;
+    const vmax = percentile(values, 97) || maxVal || 1;
+    const streak = longestStreak(dayCounts);
+
+    statsRow.innerHTML = '';
+    addStat('Повідомлень', total.toLocaleString('uk-UA'));
+    addStat('Активних днів', activeDays.toLocaleString('uk-UA'));
+    addStat('Середнє / (активний) день', mean.toFixed(1));
+    // addStat('Мода', mode);
+    addStat('Найдовша серія', `${streak} дн.`);
+    addStat('Рекорд за день', maxVal.toLocaleString('uk-UA'));
+
+    renderHeatmap(dayCounts, vmax);
+    resultsSection.scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+
+  function colorForCount(count, vmax){
+    if (!count) return `rgb(${HEAT_STOPS[0].join(',')})`;
+    const t = Math.min(count/vmax, 1);
+    const scaled = t * (HEAT_STOPS.length - 1);
+    const i = Math.min(Math.floor(scaled), HEAT_STOPS.length - 2);
+    const localT = scaled - i;
+    const c1 = HEAT_STOPS[i], c2 = HEAT_STOPS[i+1];
+    const r = Math.round(c1[0] + (c2[0]-c1[0]) * localT);
+    const g = Math.round(c1[1] + (c2[1]-c1[1]) * localT);
+    const b = Math.round(c1[2] + (c2[2]-c1[2]) * localT);
+    return `rgb(${r},${g},${b})`;
+  }
+
+  function getYearWeeks(year){
+    const firstDay = new Date(year, 0, 1);
+    const lastDay = new Date(year, 11, 31);
+    const startOffset = (firstDay.getDay() + 6) % 7;
+    const gridStart = new Date(firstDay); gridStart.setDate(firstDay.getDate() - startOffset);
+    const endOffset = 6 - ((lastDay.getDay() + 6) % 7);
+    const gridEnd = new Date(lastDay); gridEnd.setDate(lastDay.getDate() + endOffset);
+    const days = [];
+    for (let d = new Date(gridStart); d <= gridEnd; d.setDate(d.getDate()+1)) days.push(new Date(d));
+    const weeks = [];
+    for (let i = 0; i < days.length; i += 7) weeks.push(days.slice(i, i+7));
+    return weeks;
+  }
+
+  const svgns = 'http://www.w3.org/2000/svg';
+
+  function renderHeatmap(dayCounts, vmax){
+    const keys = Object.keys(dayCounts);
+    heatmapSvg.innerHTML = '';
+    if (!keys.length) return;
+
+    let minYear = Infinity, maxYear = -Infinity;
+    for (const k of keys){
+      const y = parseInt(k.slice(0,4), 10);
+      minYear = Math.min(minYear, y);
+      maxYear = Math.max(maxYear, y);
+    }
+    const years = [];
+    for (let y = minYear; y <= maxYear; y++) years.push(y);
+
+    let maxWeeks = 0;
+    const yearWeeksMap = {};
+    for (const y of years){ const w = getYearWeeks(y); yearWeeksMap[y] = w; maxWeeks = Math.max(maxWeeks, w.length); }
+
+    const width = LEFT_PAD + maxWeeks * (CELL+GAP) + 16;
+    const rowHeight = TOP_PAD_PER_YEAR + 7 * (CELL+GAP);
+    const height = years.length * (rowHeight + YEAR_GAP);
+
+    heatmapSvg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    heatmapSvg.setAttribute('width', width);
+    heatmapSvg.setAttribute('height', height);
+
+    years.forEach((year, yi) => {
+      const yOffset = yi * (rowHeight + YEAR_GAP);
+      const weeks = yearWeeksMap[year];
+
+      const yearLabel = document.createElementNS(svgns, 'text');
+      yearLabel.setAttribute('x', LEFT_PAD);
+      yearLabel.setAttribute('y', yOffset + 13);
+      yearLabel.setAttribute('font-family', "'Space Grotesk','Segoe UI',sans-serif");
+      yearLabel.setAttribute('font-weight', '700');
+      yearLabel.setAttribute('font-size', '15');
+      yearLabel.setAttribute('fill', '#0F1A26');
+      yearLabel.textContent = year;
+      heatmapSvg.appendChild(yearLabel);
+
+      const rule = document.createElementNS(svgns, 'line');
+      rule.setAttribute('x1', LEFT_PAD);
+      rule.setAttribute('x2', LEFT_PAD + maxWeeks * (CELL+GAP));
+      rule.setAttribute('y1', yOffset + YEAR_HEADER_H - 6);
+      rule.setAttribute('y2', yOffset + YEAR_HEADER_H - 6);
+      rule.setAttribute('stroke', '#D7DFEA');
+      rule.setAttribute('stroke-width', '1');
+      heatmapSvg.appendChild(rule);
+
+      WEEKDAY_LABELS.forEach((lbl, di) => {
+        if (!lbl) return;
+        const t = document.createElementNS(svgns, 'text');
+        t.setAttribute('x', LEFT_PAD - 6);
+        t.setAttribute('y', yOffset + TOP_PAD_PER_YEAR + di*(CELL+GAP) + CELL - 1);
+        t.setAttribute('text-anchor', 'end');
+        t.setAttribute('font-family', "'Inter',system-ui,sans-serif");
+        t.setAttribute('font-size', '9');
+        t.setAttribute('fill', '#8695A6');
+        t.textContent = lbl;
+        heatmapSvg.appendChild(t);
+      });
+
+      let lastMonth = -1;
+      weeks.forEach((week, wi) => {
+        const repDay = week.find(d => d.getFullYear() === year) || week[0];
+        if (repDay.getDate() <= 7 && repDay.getMonth() !== lastMonth){
+          lastMonth = repDay.getMonth();
+          const mLabel = document.createElementNS(svgns, 'text');
+          mLabel.setAttribute('x', LEFT_PAD + wi*(CELL+GAP));
+          mLabel.setAttribute('y', yOffset + TOP_PAD_PER_YEAR - 8);
+          mLabel.setAttribute('font-family', "'Inter',system-ui,sans-serif");
+          mLabel.setAttribute('font-size', '10');
+          mLabel.setAttribute('fill', '#51606F');
+          mLabel.textContent = MONTHS_UA[repDay.getMonth()];
+          heatmapSvg.appendChild(mLabel);
+        }
+
+        week.forEach((day, di) => {
+          if (day.getFullYear() !== year) return;
+          const key = dayKey(day);
+          const count = dayCounts[key] || 0;
+          const rect = document.createElementNS(svgns, 'rect');
+          rect.setAttribute('x', LEFT_PAD + wi*(CELL+GAP));
+          rect.setAttribute('y', yOffset + TOP_PAD_PER_YEAR + di*(CELL+GAP));
+          rect.setAttribute('width', CELL);
+          rect.setAttribute('height', CELL);
+          rect.setAttribute('rx', 3);
+          rect.setAttribute('fill', colorForCount(count, vmax));
+          rect.setAttribute('class', 'day-cell');
+          rect.dataset.date = key;
+          rect.dataset.count = count;
+          rect.addEventListener('mouseenter', showTooltip);
+          rect.addEventListener('mousemove', moveTooltip);
+          rect.addEventListener('mouseleave', hideTooltip);
+          heatmapSvg.appendChild(rect);
+        });
+      });
+    });
+
+    renderLegend(vmax);
+  }
+
+  function showTooltip(e){
+    const { date, count } = e.target.dataset;
+    const d = new Date(date + 'T00:00:00');
+    const formatted = d.toLocaleDateString('uk-UA', { day:'numeric', month:'long', year:'numeric' });
+    tooltip.innerHTML = `<strong>${formatted}</strong><br>${count} повідом.`;
+    tooltip.hidden = false;
+    moveTooltip(e);
+  }
+  function moveTooltip(e){
+    tooltip.style.left = e.clientX + 12 + 'px';
+    tooltip.style.top = e.clientY + 12 + 'px';
+  }
+  function hideTooltip(){ tooltip.hidden = true; }
+
+  function renderLegend(vmax){
+    legend.innerHTML = '<span>Менше</span>';
+    const steps = 4;
+    for (let i = 0; i <= steps; i++){
+      const val = i === 0 ? 0 : Math.round((vmax/steps) * i);
+      const group = document.createElement('span');
+      group.className = 'legend-group';
+      const sw = document.createElement('span');
+      sw.className = 'legend-swatch';
+      sw.style.background = colorForCount(val, vmax);
+      const label = document.createElement('span');
+      label.className = 'legend-value';
+      label.textContent = val;
+      group.appendChild(sw);
+      group.appendChild(label);
+      legend.appendChild(group);
+    }
+    const more = document.createElement('span');
+    more.textContent = 'Більше';
+    legend.appendChild(more);
+  }
+
+  downloadBtn.addEventListener('click', () => {
+    const clone = heatmapSvg.cloneNode(true);
+    clone.setAttribute('xmlns', svgns);
+    const bg = document.createElementNS(svgns, 'rect');
+    bg.setAttribute('x', 0); bg.setAttribute('y', 0);
+    bg.setAttribute('width', '100%'); bg.setAttribute('height', '100%');
+    bg.setAttribute('fill', '#ffffff');
+    clone.insertBefore(bg, clone.firstChild);
+
+    const svgStr = new XMLSerializer().serializeToString(clone);
+    const svgBlob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+    const img = new Image();
+    img.onload = () => {
+      const scale = 2;
+      const vb = heatmapSvg.viewBox.baseVal;
+      const canvas = document.createElement('canvas');
+      canvas.width = vb.width * scale;
+      canvas.height = vb.height * scale;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(scale, scale);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, vb.width, vb.height);
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(blob => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'telegram-heatmap.png';
+        a.click();
+      });
+    };
+    img.src = url;
+  });
+
+})();
+</script>
+</body>
+</html>
